@@ -1,6 +1,6 @@
 import sys
 from PySide2.QtGui import QGuiApplication
-from PySide2.QtCore import Qt, QUrl
+from PySide2.QtCore import Qt, QUrl, QThread, Slot
 #from PySide2.QtQuick import QQuickView
 from PySide2.QtWidgets import QMessageBox, QApplication, QWidget, QVBoxLayout, QPushButton, QPlainTextEdit, QLabel, QMainWindow, QListWidget, QListWidgetItem
 #from PySide2.QtQml import QQmlApplicationEngine 
@@ -8,17 +8,30 @@ import random
 import requests
 import time
 import threading
+from multiprocessing.pool import ThreadPool
 from datetime import datetime
 from api import API
-
+from idletime import IdleTime
 
 api = API()
+
+
+class MessageBox(QMessageBox):
+    def __init__(self, parent=None):
+        QMessageBox.__init__(self, parent)
+
+    @Slot(str)
+    def showMessage(self, text):
+        self.setText(text)
+        self.show()
+
 
 class App(QWidget):
 
     elapsed_time = 0
     thread_running=False
     api_token = 'fea20970f5bb1b75c96dfa8985fd15b2a3c0f8a8d3261381d0176a05475781ee88d9f7252511e5e085b99e1cee37efa86f7364b7ed5203bccd2c2fd9b76057fe'
+    apa = IdleTime()
 
 
     def __init__(self):
@@ -98,6 +111,8 @@ QPushButton:pressed {
         self.tasks.move(20,400)
         #self.test.resize(256,128)
 
+        #m = MessageBox
+        #m
         #self.setSource(QUrl('main.qml'))
         self.show()
 
@@ -106,8 +121,14 @@ QPushButton:pressed {
             return 0
         while True:
             self.thread_running=True
+            ''' this is little weired.. but works for now '''
+            if self.apa.thread_exit == True:
+                self.button.setText('Stop')
+                print("bajs")
+                break
             if self.thread_exit == True:
                 self.thread_running=False
+                self.button.setText('Stop')
                 break
             self.elapsed_time += 1
             self.label1.setText(self._online_time(self.elapsed_time))
@@ -140,6 +161,16 @@ QPushButton:pressed {
             if data.get('error'):
                 print(data.get('error'))
             else:
+                #apa = IdleTime()
+                self.apa.thread_exit = False
+                self.workingthread = QThread()
+                self.workingthread.started.connect(self.apa.thread_handle)
+                #self.apa.moveToThread(self.workingthread)
+                self.workingthread.start()
+                #t2 = threading.Thread(target=self.apa.thread_handle)
+                #t2.start()
+                #t3 = threading.Thread(target=self.apa.run)
+                #t3.start()
 
                 self.thread_exit=False
                 t = threading.Thread(target=self._update_timer)
@@ -155,7 +186,8 @@ QPushButton:pressed {
             data = api.activity_current(self.api_token)
             print(data)
             api.activity_stop(self.api_token, data['id'])
-            self.thread_exit=True
+            self.thread_exit = True
+            self.apa.thread_exit = True
             self.button.setText('Start')
 
 
