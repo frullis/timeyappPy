@@ -1,8 +1,8 @@
 import sys
-from PySide2.QtGui import QGuiApplication
-from PySide2.QtCore import Qt, QUrl, QThread, Slot
+from PySide2.QtGui import QGuiApplication, QIcon, QDesktopServices
+from PySide2.QtCore import Qt, QUrl, QThread, Slot, SIGNAL, QObject , QCoreApplication
 #from PySide2.QtQuick import QQuickView
-from PySide2.QtWidgets import QMessageBox, QApplication, QWidget, QVBoxLayout, QPushButton, QPlainTextEdit, QLabel, QMainWindow, QListWidget, QListWidgetItem
+from PySide2.QtWidgets import QSystemTrayIcon, QMenu, QMessageBox, QApplication, QWidget, QVBoxLayout, QPushButton, QPlainTextEdit, QLabel, QMainWindow, QListWidget, QListWidgetItem
 #from PySide2.QtQml import QQmlApplicationEngine 
 import random
 import requests
@@ -12,19 +12,50 @@ from multiprocessing.pool import ThreadPool
 from datetime import datetime
 from api import API
 from idletime import IdleTime
+from dialogBox import DialogBox
+from config import Config
 
 api = API()
 
 
-class MessageBox(QMessageBox):
-    def __init__(self, parent=None):
-        QMessageBox.__init__(self, parent)
+class SystemTrayIcon(QSystemTrayIcon):
+    def __init__(self, icon, parent=None):
+       QSystemTrayIcon.__init__(self, icon, parent)
+       menu = QMenu(parent)
+       exitAction = menu.addAction("Exit")
+       self.StartWorking = menu.addAction("Start Working")
+       #self.StartWorking.setEnabled(False)
+       OpenTimer = menu.addAction("Open timer")
+       dashboard = menu.addAction("Open Dashboard")
+       settings = menu.addAction("Settings")
+       self.setContextMenu(menu)
+       #QObject.connect(exitAction,SIGNAL('triggered()'), self.exit)
+       exitAction.triggered.connect(self.exit)
+       dashboard.triggered.connect(self.OpenDashboard)
+       settings.triggered.connect(self.OpenSettings)
+       self.StartWorking.triggered.connect(self.start)
 
-    @Slot(str)
-    def showMessage(self, text):
-        self.setText(text)
-        self.show()
+       
 
+    def exit(self):
+      QCoreApplication.exit()
+
+    def start(self):
+        if self.StartWorking.text() == "Start Working":
+            self.StartWorking.setText("Stop Working")
+        else:
+            self.StartWorking.setText("Start Working")
+        return 0
+    def OpenTimer(self):
+        return 0
+    def OpenDashboard(self):
+        url = QUrl("http://www.google.com")
+        QDesktopServices.openUrl(url)
+
+        return 0
+    def OpenSettings(self):
+        print("settings")
+        return 0
 
 class App(QWidget):
 
@@ -32,7 +63,7 @@ class App(QWidget):
     thread_running=False
     api_token = 'fea20970f5bb1b75c96dfa8985fd15b2a3c0f8a8d3261381d0176a05475781ee88d9f7252511e5e085b99e1cee37efa86f7364b7ed5203bccd2c2fd9b76057fe'
     apa = IdleTime()
-
+    workingthread=None
 
     def __init__(self):
         super().__init__()
@@ -46,6 +77,7 @@ class App(QWidget):
     
     def initUI(self):
         self.setWindowTitle(self.title)
+        self.setWindowIcon(QIcon('connect.png'))
         self.setGeometry(self.left, self.top, self.width, self.height)
         style = """
             background-color: white;
@@ -118,17 +150,21 @@ QPushButton:pressed {
 
     def _update_timer(self):
         if self.thread_running == True:
+            self.thread_running = False
             return 0
         while True:
+            #self.elapsed_time = time.time()
             self.thread_running=True
             ''' this is little weired.. but works for now '''
-            if self.apa.thread_exit == True:
-                self.button.setText('Stop')
+            if self.apa.thread_exit == True or self.thread_exit == True:
+                data = api.activity_current(self.api_token)
+                print(data)
+                if not data.get('error'):
+                    api.activity_stop(self.api_token, data['id'])
+                self.button.setText('Start')
+                self.workingthread.exit()
                 print("bajs")
-                break
-            if self.thread_exit == True:
-                self.thread_running=False
-                self.button.setText('Stop')
+                self.thread_running = False
                 break
             self.elapsed_time += 1
             self.label1.setText(self._online_time(self.elapsed_time))
@@ -140,7 +176,9 @@ QPushButton:pressed {
     def clickStart(self):
         print('click start/stop button')
         #self.test.clear()
-        print(self.button.text())
+        #print(self.button.text())
+
+        ''' user click start timer '''
         if self.button.text() == 'Start':
             project_id=None
             for _x in self.test.selectedItems():
@@ -159,10 +197,20 @@ QPushButton:pressed {
 
             ''' this need to be fix '''
             if data.get('error'):
-                print(data.get('error'))
+                errorBox = DialogBox()
+                returnValue = errorBox.MsgBox(data.get('error')+"Do you want to stop current activity?", "error")
+
+                if returnValue == QMessageBox.Ok:
+                    data = api.activity_current(self.api_token)
+                    print(data)
+                    api.activity_stop(self.api_token, data['id'])
+                    print("Time to do something weired!")
+
+                #print(data.get('error'))
             else:
                 #apa = IdleTime()
                 self.apa.thread_exit = False
+                print(self.workingthread)
                 self.workingthread = QThread()
                 self.workingthread.started.connect(self.apa.thread_handle)
                 #self.apa.moveToThread(self.workingthread)
@@ -175,12 +223,8 @@ QPushButton:pressed {
                 self.thread_exit=False
                 t = threading.Thread(target=self._update_timer)
                 t.start()
-            self.button.setText('Stop')
-            self.button.setStyleSheet("""QPushButton {
-    background-color: #ff6325;
-    color: red;
-    font-color: red;
-""")
+                self.button.setText('Stop')
+        
         else:
 
             data = api.activity_current(self.api_token)
@@ -189,6 +233,7 @@ QPushButton:pressed {
             self.thread_exit = True
             self.apa.thread_exit = True
             self.button.setText('Start')
+        print("end of clickstart")
 
 
     def selectItem(self):
@@ -197,10 +242,11 @@ QPushButton:pressed {
             print(_x.text())
             print(_x.data(Qt.UserRole))
         data = api.task_get(self.api_token, _x.data(Qt.UserRole))
+        print(data)
         self.tasks.clear()
         for _x in data:
             item = QListWidgetItem(_x["name"], self.tasks)
-            item.setData(Qt.UserRole, _x["id"])
+            item.setData(Qt.UserRole, _x["task_id"])
         
         print(data)
         #print(self.test.text())
@@ -262,4 +308,6 @@ if __name__ == '__main__':
     #engine = QQmlApplicationEngine()
     #engine.load(QUrl('main.qml'))
     ex = App()
+    trayIcon = SystemTrayIcon(QIcon("connect.png"))
+    trayIcon.show()
     sys.exit(app.exec_())

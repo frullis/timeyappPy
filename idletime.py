@@ -2,7 +2,7 @@ from pynput.keyboard import Key, Listener
 from PySide2.QtWidgets import QMessageBox, QApplication
 from PySide2.QtCore import QObject, QThread, Signal
 import time
-
+from dialogBox import DialogBox
 
 class IdleTime(QThread):
 
@@ -28,29 +28,18 @@ class IdleTime(QThread):
 
     def thread_handle(self):
         self.time_start=time.time()
+        #self.elapsed_time = time.time()
         while True:
             if self.thread_exit == True:
                 break
             self.elapsed_time = time.time()
             if self.calc_time() > 5:
-                f = open("loggy.txt", "a")
-                f.write("yippie key yay mother fucker")
-                f.close()
-                print("yippie key yay mother fucker")
-                self.time_start = time.time()
-                #test = Signal("hej")
-                #from timey import MessageBox
-                #m = MessageBox()
-                #self.m.signal_str.connect(parent.showMessage)
-                #m.showMessage()
                 if self.showdialog == True:
                     self.showdialog = False
-                    msgBox = QMessageBox()
-                    msgBox.setIcon(QMessageBox.Information)
-                    msgBox.setText("You have been idle for 00:22:55 minutes do you want to continue working?")
-                    msgBox.setWindowTitle("Select project")
-                    msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-                    returnValue = msgBox.exec()
+                    self.run()
+                    test = DialogBox()
+                    self.elapsed_time = time.time()
+                    returnValue = test.MsgBox("You have been idle for "+str(self.calc_time())+" seconds do you want to continue working?", "IdleTime")
                     print(returnValue)
                     if returnValue == QMessageBox.Cancel:
                         print("click!")
@@ -58,23 +47,27 @@ class IdleTime(QThread):
                         self.thread_exit=True
                         break
 
+                self.time_start = time.time()
             QApplication.processEvents()
 
 
 
 
     def _on_press(self,key):
-        self.elapsed_time = time.time()
+        #self.elapsed_time = time.time()
         print(self.time_start)
-        diff = self.elapsed_time - self.time_start
-        print("diff: " + str(diff))
+        #diff = self.elapsed_time - self.time_start
+        #print("diff: " + str(diff))
         print('{0} pressed'.format(
             key))
-        self.time_start = time.time()
+        #self.time_start = time.time()
 
     def _on_release(self,key):
         print('{0} release'.format(
             key))
+        #Stop for any keystroke
+        if key:
+            return False
         if key == Key.esc:
             # Stop listener
             return False
