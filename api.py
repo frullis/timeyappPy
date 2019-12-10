@@ -157,7 +157,7 @@ class API:
 
 
         try:
-            req = requests.post(self.api_endpoint+ "/1.0/user/auth", headers=headers, json=payload, timeout=self.timeout, timeout=self.timeout)
+            req = requests.post(self.api_endpoint+ "/1.0/user/auth", headers=headers, json=payload, timeout=self.timeout)
             return req.json()
         except requests.exceptions.RequestException as e:
             return {"error": "connection error could not reach: "+self.api_endpoint}
