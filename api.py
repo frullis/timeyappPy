@@ -5,7 +5,7 @@ import logging
 class API:
 
     api_endpoint = 'http://127.0.0.1:5000'
-    
+    timeout=5    
     
 
     def get_activity(self, api_token, start_date, end_date):
@@ -14,7 +14,7 @@ class API:
                 'api_token': api_token}
 
         try:
-            req = requests.get(self.api_endpoint+ "/1.0/activity?start_date="+start_date+"&end_date="+end_date, headers=headers)
+            req = requests.get(self.api_endpoint+ "/1.0/activity?start_date="+start_date+"&end_date="+end_date, headers=headers, timeout=self.timeout)
             return req.json()
         except requests.exceptions.RequestException as e:
             logging.error("Can not reach API (%s)",(self.api_endpoint))
@@ -24,7 +24,7 @@ class API:
         headers = {'content-type': 'application/json'}
 
         try:
-            req = requests.delete(self.api_endpoint+ "/1.0/activity/" + str(activity_id), headers=headers)
+            req = requests.delete(self.api_endpoint+ "/1.0/activity/" + str(activity_id), headers=headers, timeout=self.timeout)
             return req.json()
         except requests.exceptions.RequestException as e:
             logging.error("Can not reach API (%s)",(self.api_endpoint))
@@ -38,7 +38,7 @@ class API:
 
 
         try:
-            req = requests.post(self.api_endpoint+ "/1.0/activity", headers=headers, json=payload)
+            req = requests.post(self.api_endpoint+ "/1.0/activity", headers=headers, json=payload, timeout=self.timeout)
             return req.json()
         except requests.exceptions.RequestException as e:
             logging.error("Can not reach API (%s)",(self.api_endpoint))
@@ -49,20 +49,24 @@ class API:
                 'api-token': api_token}
 
         try:
-            req = requests.get(self.api_endpoint+ "/1.0/activity/current", headers=headers)
+            req = requests.get(self.api_endpoint+ "/1.0/activity/current", headers=headers, timeout=self.timeout)
             return req.json()
         except requests.exceptions.RequestException as e:
             logging.error("Can not reach API (%s)",(self.api_endpoint))
 
 
-    def activity_start(self, api_token, project_id):
+    def activity_start(self, api_token, project_id, task_id=None):
         headers = {'content-type': 'application/json',
                 'api-token': api_token}
 
         payload = {'agent': 'python-request', 'project_id': project_id}
 
+        if type(task_id) == int:
+            payload["task_id"] = task_id
+
         try:
-            req = requests.post(self.api_endpoint+ "/1.0/activity/start", headers=headers, json=payload)
+            req = requests.post(self.api_endpoint+ "/1.0/activity/start", headers=headers, json=payload, timeout=self.timeout)
+            logging.debug("SEND GET request")
             return req.json()
         except requests.exceptions.RequestException as e:
             logging.error("Can not reach API (%s)",(self.api_endpoint))
@@ -73,7 +77,7 @@ class API:
                 'api-token': api_token}
 
         try:
-            req = requests.put(self.api_endpoint+ "/1.0/activity/stop/"+ str(time_id), headers=headers)
+            req = requests.put(self.api_endpoint+ "/1.0/activity/stop/"+ str(time_id), headers=headers, timeout=self.timeout)
             return req.json()
         except requests.exceptions.RequestException as e:
             logging.error("Can not reach API (%s)",(api_endpoint))
@@ -85,7 +89,7 @@ class API:
                 'api-token': api_token}
 
         try:
-            req = requests.get(self.api_endpoint+ "/1.0/project", headers=headers)
+            req = requests.get(self.api_endpoint+ "/1.0/project", headers=headers, timeout=self.timeout)
             return req.json()
         except requests.exceptions.RequestException as e:
             logging.error("Can not reach API (%s)",(self.api_endpoint))
@@ -98,7 +102,7 @@ class API:
         payload = {"name": name}
 
         try:
-            req = requests.post(self.api_endpoint+ "/1.0/project", headers=headers, json=payload)
+            req = requests.post(self.api_endpoint+ "/1.0/project", headers=headers, json=payload, timeout=self.timeout)
             return req.json()
         except requests.exceptions.RequestException as e:
             logging.error("Can not reach API (%s)",(api_endpoint))
@@ -112,7 +116,7 @@ class API:
         payload = {"name": name}
 
         try:
-            req = requests.put(self.api_endpoint+ "/1.0/project/" + str(project_id), headers=headers, json=payload)
+            req = requests.put(self.api_endpoint+ "/1.0/project/" + str(project_id), headers=headers, json=payload, timeout=self.timeout)
             return req.json()
         except requests.exceptions.RequestException as e:
             logging.error("Can not reach API (%s)",(api_endpoint))
@@ -123,7 +127,7 @@ class API:
                 'api-token': api_token}
 
         try:
-            req = requests.delete(self.api_endpoint+ "/1.0/project/" + str(project_id), headers=headers)
+            req = requests.delete(self.api_endpoint+ "/1.0/project/" + str(project_id), headers=headers, timeout=self.timeout)
             return req.json()
         except requests.exceptions.RequestException as e:
             logging.error("Can not reach API (%s)",(api_endpoint))
@@ -137,7 +141,7 @@ class API:
         #start_date = datetime.utcnow().replace(hour=0,minute=0,second=0,microsecond=0).isoformat()
 
         try:
-            req = requests.get(self.api_endpoint+ "/1.0/activity?start_date="+start_date+"&end_date="+end_date+"&group_by=date", headers=headers)
+            req = requests.get(self.api_endpoint+ "/1.0/activity?start_date="+start_date+"&end_date="+end_date+"&group_by=date", headers=headers, timeout=self.timeout)
             return req.json()
         except requests.exceptions.RequestException as e:
             logging.error("Can not reach API (%s)",(api_endpoint))
@@ -147,16 +151,20 @@ class API:
 
 
 
-    def auth(self, api_key, username, password):
+    def auth(self, username, password):
         headers = {'content-type': 'application/json'}
         payload = {"username": username, "password": password}
 
 
         try:
-            req = requests.post(self.api_endpoint+ "/1.0/user/auth", headers=headers, json=payload)
+            req = requests.post(self.api_endpoint+ "/1.0/user/auth", headers=headers, json=payload, timeout=self.timeout, timeout=self.timeout)
             return req.json()
         except requests.exceptions.RequestException as e:
-            logging.error("Can not reach API (%s)",(api_endpoint))
+            return {"error": "connection error could not reach: "+self.api_endpoint}
+            logging.error("Can not reach API (%s)",(self.api_endpoint))
+        except requests.exceptions.ConnectionError as e:
+            return {"error": "connection error could not reach: "+self.api_endpoint}
+            logging.error("Can not reach API (%s)",(self.api_endpoint))
 
 
     def user_find(self, api_token, user_id):
@@ -164,7 +172,7 @@ class API:
                 'api-token': api_token}
 
         try:
-            req = requests.get(self.api_endpoint+ "/1.0/user/"+ str(user_id), headers=headers)
+            req = requests.get(self.api_endpoint+ "/1.0/user/"+ str(user_id), headers=headers, timeout=self.timeout)
             return req.json()
         except requests.exceptions.RequestException as e:
             logging.error("Can not reach API (%s)",(api_endpoint))
@@ -186,7 +194,7 @@ class API:
             'api-token': api_token}
 
         try:
-            req = requests.get(self.api_endpoint + "/1.0/task/" + str(project_id), headers=headers)
+            req = requests.get(self.api_endpoint + "/1.0/task/" + str(project_id), headers=headers, timeout=self.timeout)
             return req.json()
         except requests.exceptions.RequestException as e:
             logging.error("Can not reach API (%s)",(api_endpoint))
@@ -199,7 +207,7 @@ class API:
         payload = {"name": name}
 
         try:
-            req = requests.post(self.api_endpoint + "/1.0/task/" + str(project_id), headers=headers, json=payload)
+            req = requests.post(self.api_endpoint + "/1.0/task/" + str(project_id), headers=headers, json=payload, timeout=self.timeout)
             return req.json()
         except requests.exceptions.RequestException as e:
             logging.error("Can not reach API (%s)",(api_endpoint))
@@ -212,7 +220,7 @@ class API:
                 'api-token': api_token}
 
         try:
-            req = requests.delete(self.api_endpoint + "/1.0/task/" + str(task_id), headers=headers)
+            req = requests.delete(self.api_endpoint + "/1.0/task/" + str(task_id), headers=headers, timeout=self.timeout)
             return req.json()
         except requests.exceptions.RequestException as e:
             logging.error("Can not reach API (%s)",(api_endpoint))
@@ -225,7 +233,7 @@ class API:
         payload = {"name": name}
 
         try:
-            req = requests.put(self.api_endpoint + "/1.0/task/" + str(task_id), headers=headers, json=payload)
+            req = requests.put(self.api_endpoint + "/1.0/task/" + str(task_id), headers=headers, json=payload, timeout=self.timeout)
             return req.json()
         except requests.exceptions.RequestException as e:
             logging.error("Can not reach API (%s)",(api_endpoint))
@@ -239,7 +247,7 @@ class API:
         #payload = {"password": password}
 
         try:
-            req = requests.put(self.api_endpoint + "/1.0/user", headers=headers, json=payload)
+            req = requests.put(self.api_endpoint + "/1.0/user", headers=headers, json=payload, timeout=self.timeout)
             return req.json()
         except requests.exceptions.RequestException as e:
             logging.error("Can not reach API (%s)",(api_endpoint))
