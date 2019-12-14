@@ -3,6 +3,7 @@ from PySide2.QtWidgets import QMessageBox, QApplication
 from PySide2.QtCore import QObject, QThread, Signal
 import time
 from dialogBox import DialogBox
+from config import Config
 
 class IdleTime(QThread):
 
@@ -33,7 +34,7 @@ class IdleTime(QThread):
             if self.thread_exit == True:
                 break
             self.elapsed_time = time.time()
-            if self.calc_time() > 5:
+            if self.calc_time() > Config.idletime:
                 if self.showdialog == True:
                     self.showdialog = False
                     self.run()
@@ -46,6 +47,8 @@ class IdleTime(QThread):
                         self.showdialog = True
                         self.thread_exit=True
                         break
+                    elif returnValue == QMessageBox.Ok:
+                        self.showdialog = True
 
                 self.time_start = time.time()
             QApplication.processEvents()

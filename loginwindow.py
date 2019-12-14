@@ -4,6 +4,8 @@ from PySide2.QtWidgets import QMessageBox, QApplication, QPushButton, QDialog, Q
 from config import Config
 from timerwindow import TimerWindow
 from api import API
+from _version import __version__
+import qtawesome as qta
 import logging
 
 
@@ -26,23 +28,27 @@ class LoginWindow(QDialog):
         self.setWindowIcon(QIcon(Config.icon))
         #self.setGeometry(self.left, self.top, self.width, self.height)
  
-        label = QLabel()
-        label.setPixmap(QPixmap('icon.png'))
-        label.setAlignment(Qt.AlignCenter)
+        logo = QLabel()
+        logo.setPixmap(QPixmap('icon.png'))
+        logo.setAlignment(Qt.AlignCenter)
+
+        label_version = QLabel("version: "+__version__)
+        label_version.setAlignment(Qt.AlignCenter)
         
         self.username = QLineEdit(self)
         self.password = QLineEdit(self)
         self.password.setEchoMode(QLineEdit.Password)
-        self.button_login = QPushButton('Login', self)
+        fa5_icon = qta.icon('fa5.flag')
+        self.button_login = QPushButton(fa5_icon, 'Login')
         self.button_login.clicked.connect(self.handleLogin)
         
         layout = QVBoxLayout(self)
-        layout.addWidget(label)
+        layout.addWidget(logo)
+        layout.addWidget(label_version)
         layout.addWidget(self.username)
         layout.addWidget(self.password)
         layout.addWidget(self.button_login)
-        
-        
+        print("hasdad")
         self.show()
 
     def handleLogin(self):
