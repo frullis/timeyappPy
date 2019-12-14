@@ -113,6 +113,19 @@ class Database:
         return datetime_obj
 
 
+    def searchTask(self, project_id):
+
+        data = self.readDatabase()
+
+        my_list = []
+        for _x in data["tasks"]:
+
+            if _x["project_id"] == project_id:
+                my_list.append(_x)
+
+        return my_list
+
+
 
 
 #x = Tools()

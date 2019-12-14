@@ -1,11 +1,12 @@
 import requests
 from datetime import datetime
 import logging
+from error import ApiException
 
 class API:
 
     api_endpoint = 'http://127.0.0.1:5000'
-    timeout=5    
+    timeout=5
     
 
     def get_activity(self, api_token, start_date, end_date):
@@ -18,6 +19,7 @@ class API:
             return req.json()
         except requests.exceptions.RequestException as e:
             logging.error("Can not reach API (%s)",(self.api_endpoint))
+            raise ApiException()
 
     ''' DELETE activity '''
     def activity_del(self, api_key, activity_id):
@@ -87,12 +89,16 @@ class API:
     def get_projects(self, api_token):
         headers = {'accept': 'application/json',
                 'api-token': api_token}
+        print("HEJ")
 
         try:
             req = requests.get(self.api_endpoint+ "/1.0/project", headers=headers, timeout=self.timeout)
+            print("VADSADU")
             return req.json()
+            print(req)
         except requests.exceptions.RequestException as e:
             logging.error("Can not reach API (%s)",(self.api_endpoint))
+            raise ApiException()
 
 
     def project_add(self, api_token, name):
@@ -175,7 +181,7 @@ class API:
             req = requests.get(self.api_endpoint+ "/1.0/user/"+ str(user_id), headers=headers, timeout=self.timeout)
             return req.json()
         except requests.exceptions.RequestException as e:
-            logging.error("Can not reach API (%s)",(api_endpoint))
+            logging.error("Can not reach API (%s)",(self.api_endpoint))
 
 
     def whoami(self, api_token):
@@ -184,9 +190,13 @@ class API:
 
         try:
             req = requests.get(self.api_endpoint+ "/1.0/user/whoami", headers=headers)
+            print("hejj")
+            print(req)
+            #if req == None:
+                #raise Exception('x should not e')
             return req.json()
         except requests.exceptions.RequestException as e:
-            logging.error("Can not reach API (%s)",(api_endpoint))
+            logging.error("Can not reach API (%s)",(self.api_endpoint))
 
 
     def task_get(self, api_token, project_id):
@@ -197,7 +207,8 @@ class API:
             req = requests.get(self.api_endpoint + "/1.0/task/" + str(project_id), headers=headers, timeout=self.timeout)
             return req.json()
         except requests.exceptions.RequestException as e:
-            logging.error("Can not reach API (%s)",(api_endpoint))
+            logging.error("Can not reach API (%s)",(self.api_endpoint))
+            raise ApiException()
 
 
     def task_add(self,api_token, project_id, name):
@@ -210,7 +221,7 @@ class API:
             req = requests.post(self.api_endpoint + "/1.0/task/" + str(project_id), headers=headers, json=payload, timeout=self.timeout)
             return req.json()
         except requests.exceptions.RequestException as e:
-            logging.error("Can not reach API (%s)",(api_endpoint))
+            logging.error("Can not reach API (%s)",(self.api_endpoint))
 
 
 
@@ -223,7 +234,7 @@ class API:
             req = requests.delete(self.api_endpoint + "/1.0/task/" + str(task_id), headers=headers, timeout=self.timeout)
             return req.json()
         except requests.exceptions.RequestException as e:
-            logging.error("Can not reach API (%s)",(api_endpoint))
+            logging.error("Can not reach API (%s)",(self.api_endpoint))
 
     def task_update(self, api_token, task_id, name):
 
@@ -236,7 +247,7 @@ class API:
             req = requests.put(self.api_endpoint + "/1.0/task/" + str(task_id), headers=headers, json=payload, timeout=self.timeout)
             return req.json()
         except requests.exceptions.RequestException as e:
-            logging.error("Can not reach API (%s)",(api_endpoint))
+            logging.error("Can not reach API (%s)",(self.api_endpoint))
 
 
     ''' update password for user '''
@@ -250,7 +261,7 @@ class API:
             req = requests.put(self.api_endpoint + "/1.0/user", headers=headers, json=payload, timeout=self.timeout)
             return req.json()
         except requests.exceptions.RequestException as e:
-            logging.error("Can not reach API (%s)",(api_endpoint))
+            logging.error("Can not reach API (%s)",(self.api_endpoint))
 
 
 
