@@ -6,6 +6,7 @@ from systemtray import SystemTrayIcon
 from error import ApiException
 from api import API
 from config import Config
+from database import Database
 from _version import __version__
 import sys
 import os
@@ -13,11 +14,12 @@ import qtawesome as qta
 os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
 
 api = API()
+db = Database()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
 
-    data = api.whoami(Config.api_token)
+    data = api.whoami(db.readDatabase()['userdata']['api_token'])
     print(data)
 
     try:
