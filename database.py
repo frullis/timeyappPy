@@ -6,6 +6,7 @@ from datetime import datetime
 
 class Database:
 
+    f = Config.storage_dir + 'database.dat'
 
     #@staticmethod
     def saveDatabase(self, data):
@@ -20,7 +21,7 @@ class Database:
                 
                 
         
-        with open('database.dat', 'wb') as f:
+        with open(self.f, 'wb') as f:
             pickle.dump(data, f)
 
     def setDefaultDatabase(self):
@@ -44,14 +45,14 @@ class Database:
         new_data2 = None
  
         try:
-            f = open('database.dat', 'rb')
+            f = open(self.f, 'rb')
             new_data = pickle.load(f)
             #print(new_data)
             return new_data
         except FileNotFoundError:
 
             data = self.setDefaultDatabase()
-            with open('database.dat', 'wb') as f:
+            with open(self.f, 'wb') as f:
                 print("yoyo")
                 pickle.dump(data, f)
                 return data
@@ -111,6 +112,12 @@ class Database:
         datetime_obj = datetime.strptime(str_time, '%a, %d %b %Y %H:%M:%S %Z')
 
         return datetime_obj
+
+    def save_activity(self, x):
+        data = self.readDatabase()
+        data["activity"] = x
+
+        self.saveDatabase(data)
 
 
     def searchTask(self, project_id):
