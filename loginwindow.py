@@ -3,6 +3,7 @@ from PySide2.QtCore import Qt, QObject , QCoreApplication
 from PySide2.QtWidgets import QMessageBox, QApplication, QPushButton, QDialog, QLabel, QLineEdit, QVBoxLayout
 from config import Config
 from timerwindow import TimerWindow
+from database import Database
 from api import API
 from _version import __version__
 import qtawesome as qta
@@ -12,6 +13,7 @@ import logging
 class LoginWindow(QDialog):
 
     api = API()
+    db = Database()
 
 
     def __init__(self):
@@ -57,6 +59,7 @@ class LoginWindow(QDialog):
         try:
             if data.get('username'):
                 logging.info("username and password accepted")
+                self.db.saveUser(data["username"], data["api_token"], data['api_expire'])
                 self.accept()
             elif data.get('error'):
                 logging.info("username and password is incorrect")
