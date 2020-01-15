@@ -1,7 +1,7 @@
 import sys
 from PySide2.QtGui import QGuiApplication, QIcon, QDesktopServices
 from PySide2.QtCore import Qt, QUrl, QThread, Slot, SIGNAL, QObject , QCoreApplication
-from PySide2.QtWidgets import QSystemTrayIcon, QMenu, QMessageBox, QApplication, QWidget, QVBoxLayout, QGridLayout, QPushButton, QPlainTextEdit, QLabel, QMainWindow, QListWidget, QListWidgetItem
+from PySide2.QtWidgets import QSystemTrayIcon, QMenu, QMessageBox, QApplication, QWidget, QVBoxLayout, QGridLayout, QPushButton, QPlainTextEdit, QLabel, QMainWindow, QListWidget, QListWidgetItem, QLineEdit
 import random
 import requests
 import time
@@ -26,11 +26,12 @@ class TimerWindow(QWidget):
 
     elapsed_time = 0
     thread_running=False
-    api_token = 'fea20970f5bb1b75c96dfa8985fd15b2a3c0f8a8d3261381d0176a05475781ee88d9f7252511e5e085b99e1cee37efa86f7364b7ed5203bccd2c2fd9b76057fe'
+    #api_token = 'fea20970f5bb1b75c96dfa8985fd15b2a3c0f8a8d3261381d0176a05475781ee88d9f7252511e5e085b99e1cee37efa86f7364b7ed5203bccd2c2fd9b76057fe'
     apa = IdleTime()
     workingthread=None
     systray=None
     db = Database()
+    api_token = db.readDatabase()['userdata']['api_token']
 
     def __init__(self):
         super().__init__()
@@ -58,9 +59,9 @@ class TimerWindow(QWidget):
             """
 
         self.setStyleSheet(style)
-        self.label1 = QLabel('00:00:00', self)
-        self.label1.setAlignment(Qt.AlignCenter)
-        self.label1.setStyleSheet("""QLabel {
+        self.labeltimer = QLabel('00:00:00', self)
+        self.labeltimer.setAlignment(Qt.AlignCenter)
+        self.labeltimer.setStyleSheet("""QLabel {
     font: medium Ubuntu;
     font-size: 32px;
     color: #006325;
@@ -100,21 +101,34 @@ QPushButton:pressed {
         #self.label4.setAlignment(Qt.AlignCenter)
         self.label3 = QLabel('None', self)
         self.label3.setAlignment(Qt.AlignCenter)
-        
+     
+
         self.test = QListWidget(self)
         self.test.addItem("item4")
         self.test.itemSelectionChanged.connect(self.selectItem)
 
 
+        self.addtask = QLineEdit(self)
+        #fa5_plusicon = qta.icon('fa5s.plus')
+        self.addtaskbutton = QPushButton(qta.icon('fa5s.plus'), "Add")
+        self.addtaskbutton.clicked.connect(self._click_additem)
+
+        self.deltaskbutton = QPushButton(qta.icon('fa5s.minus'), "Del")
+        self.deltaskbutton.clicked.connect(self._click_deltask)
+
+
         self.tasks = QListWidget(self)
         self.tasks.addItem("No tasks")
 
-        layout.addWidget(self.label1,0,0)
+        layout.addWidget(self.labeltimer,0,0)
         layout.addWidget(self.button,0,1)
         #layout.addWidget(self.label4,1,0)
         layout.addWidget(self.label3,1,0)
         layout.addWidget(self.test,2,0)
-        layout.addWidget(self.tasks,3,0)
+        layout.addWidget(self.addtask,3,0)
+        layout.addWidget(self.addtaskbutton,3,1)
+        layout.addWidget(self.deltaskbutton,3,2)
+        layout.addWidget(self.tasks,4,0)
 
 
         self.show()
@@ -138,9 +152,50 @@ QPushButton:pressed {
                 self.thread_running = False
                 break
             self.elapsed_time += 1
-            self.label1.setText(self._online_time(self.elapsed_time))
+            self.labeltimer.setText(self._online_time(self.elapsed_time))
             time.sleep(1)
-        
+
+
+
+    def _click_additem(self):
+        print("oh oh oh oh")
+        print(self.addtask.text())
+        text = self.addtask.text()
+        project_id=None
+
+        if len(text) > 0:
+            print("This seems acceptable")
+            for _x in self.test.selectedItems():
+                project_id = _x.data(Qt.UserRole)
+            print(project_id)
+
+            if project_id == None:
+                QMessageBox.information(self, 'PyQt5 message', "Please select a a project first", QMessageBox.Ok)
+            else:
+                api.task_add(self.api_token,project_id, text)
+                self.selectItem()
+        else:
+            QMessageBox.information(self, 'PyQt5 message', "Please enter a taskname first!", QMessageBox.Ok)
+            print("please enter a name of the task you want to add first")
+
+
+    def _click_deltask(self):
+        print("Ooopsie")
+
+
+        task_id=None
+        for _x in self.tasks.selectedItems():
+            task_id = _x.data(Qt.UserRole)
+
+        print(task_id)
+
+        if task_id is not None:
+            api.task_delete(self.api_token, task_id)
+            self.selectItem()
+        else:
+            QMessageBox.information(self, 'PyQt5 message', "unable to delete task, no such task_id", QMessageBox.Ok)
+
+
 
 
     def clickStart(self):
@@ -173,37 +228,44 @@ QPushButton:pressed {
                 data = api.activity_start(self.api_token, project_id, task_id)
 
             ''' this need to be fix '''
-            if data.get('error'):
-                errorBox = DialogBox()
-                returnValue = errorBox.MsgBox(data.get('error')+"Do you want to stop current activity?", "error")
+            try:
+                if data.get('error'):
+                    errorBox = DialogBox()
+                    returnValue = errorBox.MsgBox(data.get('error')+"Do you want to stop current activity?", "error")
 
-                if returnValue == QMessageBox.Ok:
-                    data = api.activity_current(self.api_token)
-                    print(data)
-                    api.activity_stop(self.api_token, data['id'])
-                    print("Time to do something weired!")
+                    if returnValue == QMessageBox.Ok:
+                        data = api.activity_current(self.api_token)
+                        print(data)
+                        api.activity_stop(self.api_token, data['id'])
+                        print("Time to do something weired!")
 
-                return 0 #do we need this?
+                    return 0 #do we need this?
 
-                #print(data.get('error'))
-            elif data:
-                #apa = IdleTime()
-                self.apa.thread_exit = False
-                print(self.workingthread)
-                self.workingthread = QThread()
-                self.workingthread.started.connect(self.apa.thread_handle)
-                #self.apa.moveToThread(self.workingthread)
-                self.workingthread.start()
+                    #print(data.get('error'))
+                elif data:
+                    #apa = IdleTime()
+                    self.apa.thread_exit = False
+                    print(self.workingthread)
+                    self.workingthread = QThread()
+                    self.workingthread.started.connect(self.apa.thread_handle)
+                    #self.apa.moveToThread(self.workingthread)
+                    self.workingthread.start()
 
-                self.thread_exit=False
-                t = threading.Thread(target=self._update_timer)
-                t.start()
-                self.systray.StartWorking.setText("Stop Working")
-                self.button.setText('Stop')
-                fa5s_icon = qta.icon('fa5s.stop')
-                self.button.setIcon(fa5s_icon)
-                self.test.setDisabled(True)
-                return 1
+                    self.thread_exit=False
+                    t = threading.Thread(target=self._update_timer)
+                    t.start()
+                    self.systray.StartWorking.setText("Stop Working")
+                    self.button.setText('Stop')
+                    fa5s_icon = qta.icon('fa5s.stop')
+                    self.button.setIcon(fa5s_icon)
+                    self.test.setDisabled(True)
+                    return 1
+            except AttributeError:
+                ''' if we reach this stage we either got an invalid API response (no error field) or our internet connection isnt working '''
+                #errorBox = DialogBox()
+                #errorBox.MsgBox("No internet connection or invalid API response", "error")
+                QMessageBox.information(self, 'error', "No internet connection or invalid API response", QMessageBox.Ok)
+
         
         else:
 
@@ -253,14 +315,16 @@ QPushButton:pressed {
         #print(data_p2)
 
         l = []
+        print(data_p)
         for _x in data_p:
             print("loop")
+            print(_x)
             #self.test.addItem(_x["name"])
             item = QListWidgetItem(_x["name"], self.test)
             item.setData(Qt.UserRole, _x["id"])
             #l = []
             try:
-                lol = api.task_get(Config.api_token, _x["id"])
+                lol = api.task_get(self.api_token, _x["id"])
                 print(lol)
                 for _x in lol:
                     #if len(lol) > 0:
@@ -281,10 +345,15 @@ QPushButton:pressed {
             data = [{"duration": 20},{"duration": 400}, {"duration": 300}]
 
         
+        print(data)
         for _x in data:
+            #self.db.save_activity()
             self.elapsed_time += _x['duration']
         ''' Set timer '''
-        self.label1.setText(self._online_time(self.elapsed_time))
+        self.labeltimer.setText(self._online_time(self.elapsed_time))
+
+        if len(data) > 0:
+            self.db.save_activity(data)
 
 
         try:
@@ -339,7 +408,7 @@ QPushButton:pressed {
             #if data.get('id'):
             try:
                 api.activity_stop(self.api_token, data['id'])
-            except TypeError:
+            except (TypeError, KeyError):
                 pass
             self.thread_exit = True
             self.apa.thread_exit = True
