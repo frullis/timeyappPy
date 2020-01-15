@@ -12,3 +12,15 @@ class DialogBox:
         returnValue = msgBox.exec()
         return returnValue
 
+    
+    def InfoBox(self,text,title):
+        msgBox = QMessageBox()
+        msgBox.setIcon(QMessageBox.Information)
+        msgBox.setText(text)
+        msgBox.setWindowTitle(title)
+        msgBox.setStandardButtons(QMessageBox.Ok)
+
+        returnValue = msgBox.exec()
+        return returnValue
+
+
